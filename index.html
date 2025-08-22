@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="copo">
+            <div class="clips"></div>
+            <div class="cartaobox">
+                <div class="cartao" id="cartao"></div>
+            </div>
+            <div class="liquido">
+                <svg width="250" height="393" viewBox="0 0 250 400" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="agua" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#b3e5fc" />
+                        <stop offset="100%" stop-color="#81d4fa" />
+                        </linearGradient>
+                    </defs>
+                    <path id="onda" fill="url(#agua)">
+                        <animate 
+                        attributeName="d" 
+                        id="aguinha"
+                        dur="12s" 
+                        repeatCount="indefinite" 
+                        values="
+                            M0,300 Q62.5,290 125,295 T250,300 V400 H0 Z;
+                            M0,300 Q62.5,300 125,295 T250,300 V400 H0 Z;
+                            M0,300 Q62.5,290 125,295 T250,300 V400 H0 Z
+                        "
+                        />
+                    </path>
+                </svg>
+            </div>
+        </div>
+        <div class="form">
+            <form id="simulador">
+                <label>Comprimento do cartão em cm²</label>
+                <input type="number" id="comprimento" min="5">
+                <label>Quantidade de clips (1 = 0,425 gramas):</label>
+                <input type="number" id="quantidade">
+            </form>
+            <label for=""></label>
+            <button type="button" id="simular">Simular</button>
+        </div>
+    </div>
+</body>
+<script>
+  let grandedistorcao = false;
+  const cartao = document.querySelector('.cartao');
+  const distorcao = document.createElement('div');
+  distorcao.classList.add('distorcao');
+  document.body.appendChild(distorcao);
+  let massa = 0
+  document.getElementById('simular').addEventListener('click', () => {
+        const quantidade = parseInt(document.getElementById('quantidade').value);
+        const larguracartao = parseFloat(document.getElementById('comprimento').value);
+        const cartao = document.getElementById('cartao');
+        massa += 0.3355 * larguracartao + 0,645;
+        console.log("peso cartão: ", massa)
+        cartao.innerHTML = '';
+        if (larguracartao != null){
+            document.documentElement.style.setProperty('--larguracartao', larguracartao*10+'px');
+        }
+        for (let i = 0; i < quantidade; i++) {
+            const bolinha = document.createElement('div');
+            bolinha.classList.add('bolinha');
+            const posX = Math.random() * (cartao.clientWidth - 10);
+            bolinha.style.left = `${posX}px`;
+            cartao.appendChild(bolinha);
+            massa += 0.425;
+            animarDistorcao();
+            if(comportamentoPedrinha(massa, (larguracartao))){
+                distorcao.classList.add('ativa');
+                document.documentElement.style.setProperty('--larguradistorcao', larguracartao*11+'px');
+            }
+            else {
+                setTimeout(()=>{cartao.classList.add('queda');}, 2000)
+            }
+        }
+        setTimeout(()=>{location.reload()}, 4000)
+    massa = 0
+  });
+  function comportamentoPedrinha(massaGramas, larguraCm) {
+        const massaKg = massaGramas / 1000;
+        const peso = massaKg * 9.81;
+
+        const larguraM = larguraCm / 100;
+        const alturaM = 5.5 / 100;
+        const areaEmContato = 2 * (larguraM + alturaM);
+        const tensaoSuperficialForca = 0.07275 * areaEmContato;
+
+        const profundidadeM = 0.2 / 100;
+        const volume = larguraM * alturaM * profundidadeM;
+        const empuxo = 1000 * 9.81 * volume;
+        console.log(peso)
+        console.log(tensaoSuperficialForca+empuxo)
+        if (peso <= tensaoSuperficialForca) {
+            grandedistorcao = false;
+            return true;
+        } else if(peso <= empuxo){
+            grandedistorcao = false;
+            return true
+        } else if (peso <= tensaoSuperficialForca + empuxo){
+            grandedistorcao = true;
+            return true;
+        }
+        else {
+            return false;
+        }
+  }
+  function atualizarPosicao() {
+        const rect = cartao.getBoundingClientRect();
+        if(grandedistorcao){
+            distorcao.style.top = `${rect.top + window.scrollY-1}px`;
+        }
+        else {distorcao.style.top = `${rect.top + window.scrollY+2}px`;}
+        distorcao.style.left = `${rect.left + window.scrollX-5}px`;
+  }
+  function animarDistorcao() {
+        atualizarPosicao();
+        requestAnimationFrame(animarDistorcao);
+  }
+</script>
+</html>
